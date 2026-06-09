@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MZ-Standard : 신조어 & 줄임말 번역기</title>
+    <!-- Tailwind CSS for modern responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <!-- React & Babel CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom CSS for animations and custom scrollbars -->
+    <style>
+        @keyframes wave {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .animate-wave {
+            animation: wave 1.5s ease-in-out infinite;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-200">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Basic Pre-populated Slang Dictionary Database
+        const INITIAL_DICTIONARY = [
+            { id: 1, word: '중꺾마', standard: '중요한 것은 꺾이지 않는 마음', definition: '아무리 어려운 상황이라도 포기하지 않는 굳건한 마음가짐을 뜻함.', origin: '2022년 롤드컵 우승팀 DRX의 데프트 선수 인터뷰에서 유래.', category: '유행어', rating: 5, example: '경기 스코어가 뒤지고 있어도 끝까지 해보자! 중꺾마!' },
+            { id: 2, word: '알잘딱깔센', standard: '알아서 잘 딱 깔끔하고 센스있게', definition: '상대방이 구구절절 설명하지 않아도 알아서 완벽하게 일 처리를 하는 행위.', origin: '인터넷 방송인 우왁굳의 방송 시청자 유행어에서 유래.', category: '줄임말', rating: 5, example: '신입사원 김 대리는 가르쳐 주지 않아도 일을 아주 알잘딱깔센하게 처리하더라고.' },
+            { id: 3, word: '분좋카', standard: '분위기 좋은 카페', definition: '인테리어나 풍경이 예쁘고 분위기가 안락하여 사진 찍기 좋은 카페.', origin: '소셜 미디어(인스타그램 등)에서 태그 축약어로 흔히 쓰이며 전파됨.', category: '줄임말', rating: 4, example: '주말에 연남동 분좋카 가서 디저트 먹고 사진 찍자.' },
+            { id: 4, word: '갓생', standard: '부지런하고 모범적인 삶', definition: '신(God)과 인생(生)의 합성어로, 하루하루 계획적이고 부지런하게 살아가는 훌륭한 삶.', origin: '팬덤 문화에서 좋아하는 연예인을 본받아 생산적인 삶을 살고자 다짐하며 유행하기 시작함.', category: '신조어', rating: 5, example: '매일 아침 6시에 일어나서 운동하고 책 읽으며 오늘부터 갓생 산다!' },
+            { id: 5, word: '오운완', standard: '오늘 운동 완료', definition: '하루 계획했던 피트니스나 홈트레이닝 등의 운동 일정을 모두 마쳤음을 인증하는 말.', origin: '인스타그램에서 운동 인증 사진을 업로드할 때 해시태그(#오운완)로 급격하게 확산됨.', category: '줄임말', rating: 5, example: '등 운동 1시간 조지고 인증샷 올린다. 오운완!' },
+            { id: 6, word: '억까', standard: '억지 까기 (억지로 트집 잡아 비난하기)', definition: '합리적인 이유 없이 억지로 꼬투리를 잡아서 대상을 과도하게 폄하하거나 비난하는 행위.', origin: '게임 커뮤니티에서 불합리하게 억울한 죽음을 맞이하거나 억울한 지적을 당할 때 쓰이다 보편화됨.', category: '신조어', rating: 4, example: '그냥 실수로 컵 한 번 깼는데 회사 잘려야 된다는 건 완전 억까 아니냐?' },
+            { id: 7, word: '억텐', standard: '억지 텐션', definition: '기분이 별로 좋지 않거나 피곤한 상태임에도 억지로 텐션을 끌어올려 쾌활한 척 리액션하는 상황.', origin: '인터넷 개인 방송에서 억지로 신난 척하는 리액션을 지칭하면서 대중적으로 유행.', category: '신조어', rating: 4, example: '오늘 피곤해서 억텐 부렸더니 퇴근길에 완전히 방전됐다.' },
+            { id: 8, word: '점메추', standard: '점심 메뉴 추천', definition: '점심시간에 무엇을 먹을지 결정하지 못하는 사람들을 위해 메뉴 선택을 권유하는 행위.', origin: '메신저 단체방 및 트위터 등에서 오늘 뭐 먹을지 서로 묻는 과정에서 줄임말로 탄생.', category: '줄임말', rating: 3, example: '단톡방 친구들아, 점메추 좀 해줘! 칼칼한 국물 땡긴다.' },
+            { id: 9, word: '저메추', standard: '저녁 메뉴 추천', definition: '저녁 시간에 무엇을 먹을지 고민하는 이들을 위해 메뉴 선택 의견을 공유하는 행위.', origin: '점메추의 자매어 격으로 저녁 메뉴 버전에 해당함.', category: '줄임말', rating: 3, example: '오늘 퇴근 푸드는 곱창이랑 엽떡 중에 골라줘. 저메추 바람!' },
+            { id: 10, word: '갑통알', standard: '갑자기 통장을 보니 알바 해야겠다', definition: '잔고가 턱없이 부족해진 개인 금융 상태를 깨닫고 급히 아르바이트를 구하려는 서글픈 심정.', origin: '온라인 커뮤니티의 지출 통계 드립에서 유래된 유쾌하고도 씁쓸한 자조적 밈.', category: '신조어', rating: 4, example: '어제 백화점 쇼핑 좀 지르고 갑통알 와서 급하게 단기 물류 알바 신청했다.' },
+            { id: 11, word: '캘박', standard: '캘린더 박기', definition: '주요 약속이나 일정을 모바일 캘린더 앱에 저장하여 다른 일정이 겹치지 않게 확정 짓는 행동.', origin: '직장인 및 바쁜 현대인들의 스케줄 공유 문화에서 퍼진 축약어.', category: '신조어', rating: 4, example: '다음 주 수요일 저녁 모임 시간 잊지 않게 폰에 얼른 캘박해 놔!' },
+            { id: 12, word: '디토합니다', standard: '나도 동감한다 (Ditto)', definition: '상대방의 의견이나 감정에 백퍼센트 동의하고 마음속 깊이 일치한다는 의사표현.', origin: '아이돌 그룹 NewJeans의 히트곡 \'Ditto\'의 가사와 인기에 힘입어 재유행한 해외 표현의 변형.', category: '밈', rating: 5, example: 'A: "이번 프로젝트 마감 미뤄야 돼." B: "저도 부장님 말씀에 적극 디토합니다."' },
+            { id: 13, word: '너 T야?', standard: '너 MBTI가 T야? (공감 능력 부족 지적)', definition: '상황에 대한 이성적인 분석만 앞서고 타인의 슬픔이나 억울함에 깊이 공감하지 못하는 상대방에게 은근한 타박 조로 건네는 유머형 질문.', origin: '유튜브 코미디 쇼 및 MBTI 열풍 속에서 감정형(F)이 이성형(T)을 놀릴 때 널리 퍼짐.', category: '밈', rating: 5, example: '나 넘어져서 무릎 깨졌다고 하니까 소독했냐고만 묻네. 너 T야?' },
+            { id: 14, word: '중꺾그마', standard: '중요한 건 꺾였는데도 그냥 하는 마음', definition: '의욕이나 마음가짐이 이미 상처받고 꺾였더라도, 멈추지 않고 꾸역꾸역 일과 생활을 이어 나가는 처절한 생존 정신.', origin: '중꺾마(중요한 건 꺾이지 않는 마음)의 현실적 변형으로, 직장인들의 피로감 속에서 공감대를 얻음.', category: '밈', rating: 4, example: '퇴근하고 싶고 사표 던지고 싶지만, 중꺾그마 정신으로 일단 남은 서류는 채운다.' },
+            { id: 15, word: '스불재', standard: '스스로 불러온 재앙', definition: '본인의 무리한 고집이나 섣부른 선택, 계획 설계 미스로 인해 파생된 고통스러운 상황을 일컫는 자조적 단어.', origin: '만화, 서브컬처 팬덤에서 자기반성적 상황극 대사로 쓰이다 유행어로 급부상.', category: '신조어', rating: 5, example: '마감 3일 전인데 세 개 채널 다 수락해버렸으니 완전 스불재다. 밤새야지.' },
+            { id: 16, word: '꾸안꾸', standard: '꾸민 듯 안 꾸민 듯', definition: '인위적이지 않고 자연스러우면서도 한편으로는 세련되게 차려입은 감각적인 외모 스타일.', origin: '패션 미디어 및 유튜버들의 코디 가이드 단골 용어가 대중 전반에 완전히 안착함.', category: '줄임말', rating: 5, example: '소개팅 나갈 때는 너무 빡세게 차려입지 말고 단정한 꾸안꾸 느낌이 최고야.' },
+            { id: 17, word: '낄끼빠빠', standard: '낄 때 끼고 빠질 때 빠지기', definition: '대화의 흐름이나 모임 상황을 눈치껏 빠르게 파악하여, 동참할 때와 조용히 자리를 비켜줄 때를 현명하게 구분하는 사회적 처세술.', origin: '2010년대 중반 유행어로 시작해 현재는 표준 사전에 준할 정도로 관용화된 필수 축약어.', category: '줄임말', rating: 5, example: '눈치 없게 회식 3차까지 다 따라가지 말고 2차 끝나면 낄끼빠빠 하자.' },
+            { id: 18, word: '내또출', standard: '내일 또 출근', definition: '일요일 저녁이나 휴가 마지막 날 느끼는 극도의 아쉬움과 함께 월요일 출근에 대한 절망을 담은 한탄.', origin: '직장인 커뮤니티(블라인드 등)에서 출근 스트레스를 담은 한탄 릴레이글에서 보편화.', category: '줄임말', rating: 4, example: '일요일 밤 11시 넘은 거 실화냐? 하... 내또출에 눈물이 앞을 가린다.' },
+            { id: 19, word: '폼미쳤다', standard: '실력이나 분위기가 대단하다', definition: '특정 인물의 실력, 외모, 기량 혹은 상황이 절정(Peak)에 달해 엄청난 활약을 보여줄 때 사용하는 극찬 표현.', origin: '축구 커뮤니티에서 절정의 경기력을 보여주는 선수를 향해 찬사를 보내다 타 분야 전반으로 확산.', category: '밈', rating: 5, example: '이번에 새로 출시된 신형 자동차 외관 디자인 진짜 폼미쳤다.' }
+        ];
+
+        // Slang Quiz Dataset
+        const QUIZ_QUESTIONS = [
+            {
+                id: 1,
+                question: '다음 중 "분좋카"의 올바른 뜻은 무엇일까요?',
+                options: ['분수대 좋은 카페', '분위기 좋은 카페', '분당에 있는 좋은 카페', '분명히 맛있는 카푸치노'],
+                correct: 1,
+                explanation: '"분좋카"는 "분위기 좋은 카페"를 짧게 줄인 말로, 소셜 미디어 인플루언서와 커플들이 자주 사용하는 신조어입니다.'
+            },
+            {
+                id: 2,
+                question: '"중꺾그마"의 슬프고도 현실적인 올바른 뜻은 무엇일까요?',
+                options: [
+                    '중국집에서 꺾인 면은 그냥 마저 먹자',
+                    '중요한 것은 꺾이지 않는 마인드',
+                    '중요한 건 꺾였는데도 그냥 하는 마음',
+                    '중도 포기는 꺾고 그냥 마주하자'
+                ],
+                correct: 2,
+                explanation: '"중꺾그마"는 "중요한 건 꺾였는데도 그냥 하는 마음"의 줄임말로, "중꺾마"를 비틀어 이미 지치고 힘들지만 그래도 성실히 본업을 계속하는 현대 직장인들의 페이소스 가득한 밈입니다.'
+            },
+            {
+                id: 3,
+                question: '다음 상황에서 들어갈 가장 알맞은 신조어는?\n"이번 학기 전공 4개에 교양 2개, 대외활동까지 신청했더니 과제에 짓눌려 잠을 못 자겠어. 진짜 내 손으로 무덤을 판 격이지..."',
+                options: ['갓생', '스불재', '갑통알', '억까'],
+                correct: 1,
+                explanation: '"스불재"는 "스스로 불러온 재앙"의 약자로, 본인이 과하게 의욕을 부리거나 무리한 선택을 하여 스스로 곤경에 처한 상태를 일컫는 최적의 단어입니다.'
+            },
+            {
+                id: 4,
+                question: '"너 T야?"라는 밈이 주로 사용되는 상황은 언제일까요?',
+                options: [
+                    '친구가 차(Tea)를 너무 자주 마실 때',
+                    '친구가 옷을 너무 타이트하게 입고 왔을 때',
+                    '타인의 슬픔이나 고통에 깊이 공감하지 못하고 지극히 이성적인 정답만 말해 서운하게 만들 때',
+                    '축구팀의 전술(Tactics)에 대해 과도한 참견을 늘어놓을 때'
+                ],
+                correct: 2,
+                explanation: '"너 T야?"는 MBTI 검사의 이성지향적 성향인 T(Thinking)형이 지나치게 이성적인 분석을 제기할 때, 감정적 위로를 바라는 상대가 공감 부족을 해학적으로 지적하기 위해 던지는 유행어입니다.'
+            },
+            {
+                id: 5,
+                question: '"알잘딱깔센"의 다섯 글자 풀이에 해당하지 않는 단어는?',
+                options: ['알아서', '딱', '깔끔하고', '센세이션하게'],
+                correct: 3,
+                explanation: '"알잘딱깔센"은 "알아서 / 잘 / 딱 / 깔끔하고 / 센스있게"의 줄임말입니다. 따라서 "센세이션하게"는 잘못된 풀이입니다.'
+            }
+        ];
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        function App() {
+            // Theme setup
+            const [darkMode, setDarkMode] = useState(false);
+            
+            // Tab states: 'translator' | 'dictionary' | 'quiz' | 'submit' | 'deploy'
+            const [activeTab, setActiveTab] = useState('translator');
+
+            // Dictionary Data (persisted in LocalStorage if supported)
+            const [dictionary, setDictionary] = useState(() => {
+                const saved = localStorage.getItem('mz_slang_dict');
+                return saved ? JSON.parse(saved) : INITIAL_DICTIONARY;
+            });
+
+            // Save dictionary when modified
+            useEffect(() => {
+                localStorage.setItem('mz_slang_dict', JSON.stringify(dictionary));
+            }, [dictionary]);
+
+            // Dark Mode Class Handler
+            useEffect(() => {
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }, [darkMode]);
+
+            // Global Notification Center (to avoid standard alerts)
+            const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+            const triggerToast = (message, type = 'success') => {
+                setToast({ show: true, message, type });
+                setTimeout(() => {
+                    setToast(prev => ({ ...prev, show: false }));
+                }, 3000);
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {/* Header */}
+                    <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+                        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('translator')}>
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                                    <i data-lucide="message-square-code" className="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h1 className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 bg-clip-text text-transparent">
+                                        MZ-Standard
+                                    </h1>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">신조어 & 줄임말 스마트 번역기</p>
+                                </div>
+                            </div>
+
+                            {/* Navigation Tabs (Desktop) */}
+                            <nav className="hidden md:flex items-center space-x-1">
+                                <button 
+                                    onClick={() => setActiveTab('translator')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'translator' ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                                    <i data-lucide="languages" className="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i> 번역기
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('dictionary')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'dictionary' ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                                    <i data-lucide="book-open" className="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i> 신조어 사전
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('quiz')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'quiz' ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                                    <i data-lucide="trophy" className="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i> 트렌드 테스트
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('submit')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'submit' ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                                    <i data-lucide="plus-circle" className="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i> 신조어 제보
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('deploy')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'deploy' ? 'bg-pink-50 dark:bg-pink-950/30 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                                    <i data-lucide="github" className="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i> 배포 가이드
+                                </button>
+                            </nav>
+
+                            {/* Theme Control and Social Links */}
+                            <div className="flex items-center space-x-2">
+                                <button 
+                                    onClick={() => setDarkMode(!darkMode)}
+                                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300"
+                                    aria-label="Toggle Dark Mode">
+                                    <i data-lucide={darkMode ? "sun" : "moon"} className="w-4.5 h-4.5"></i>
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('deploy')}
+                                    className="md:hidden p-2.5 rounded-xl bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-400 hover:bg-pink-200"
+                                    title="GitHub & Vercel 배포법">
+                                    <i data-lucide="github" className="w-4.5 h-4.5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Mobile Navigation Tabs (Fixed Bottom on mobile, or simple subheader) */}
+                        <div className="md:hidden flex border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 justify-around py-1">
+                            <button onClick={() => setActiveTab('translator')} className={`flex flex-col items-center py-1 text-xs font-semibold ${activeTab === 'translator' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`}>
+                                <i data-lucide="languages" className="w-4 h-4 mb-0.5"></i>
+                                <span>번역기</span>
+                            </button>
+                            <button onClick={() => setActiveTab('dictionary')} className={`flex flex-col items-center py-1 text-xs font-semibold ${activeTab === 'dictionary' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`}>
+                                <i data-lucide="book-open" className="w-4 h-4 mb-0.5"></i>
+                                <span>사전</span>
+                            </button>
+                            <button onClick={() => setActiveTab('quiz')} className={`flex flex-col items-center py-1 text-xs font-semibold ${activeTab === 'quiz' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`}>
+                                <i data-lucide="trophy" className="w-4 h-4 mb-0.5"></i>
+                                <span>테스트</span>
+                            </button>
+                            <button onClick={() => setActiveTab('submit')} className={`flex flex-col items-center py-1 text-xs font-semibold ${activeTab === 'submit' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`}>
+                                <i data-lucide="plus-circle" className="w-4 h-4 mb-0.5"></i>
+                                <span>제보</span>
+                            </button>
+                            <button onClick={() => setActiveTab('deploy')} className={`flex flex-col items-center py-1 text-xs font-semibold ${activeTab === 'deploy' ? 'text-pink-600 dark:text-pink-400' : 'text-slate-500'}`}>
+                                <i data-lucide="git-branch" className="w-4 h-4 mb-0.5"></i>
+                                <span>배포</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 md:py-10">
+                        {activeTab === 'translator' && <TranslatorSection dictionary={dictionary} triggerToast={triggerToast} />}
+                        {activeTab === 'dictionary' && <DictionarySection dictionary={dictionary} setDictionary={setDictionary} triggerToast={triggerToast} />}
+                        {activeTab === 'quiz' && <QuizSection triggerToast={triggerToast} />}
+                        {activeTab === 'submit' && <SubmitSection dictionary={dictionary} setDictionary={setDictionary} triggerToast={triggerToast} />}
+                        {activeTab === 'deploy' && <DeploySection triggerToast={triggerToast} />}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 transition-colors py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                        <div className="max-w-6xl mx-auto px-4 space-y-3">
+                            <p className="font-semibold">MZ-Standard © 2026. Designed for GitHub and Vercel Single-file Deployments.</p>
+                            <p className="max-w-md mx-auto leading-relaxed">
+                                본 앱은 단 하나의 HTML 문서에 React, Tailwind CSS, Lucide Icon이 완벽히 포함되어 브라우저 내에서 즉각 렌더링되므로 백엔드 DB 설정 없이 정적 호스팅으로 신속하게 배포 가능합니다.
+                            </p>
+                        </div>
+                    </footer>
+
+                    {/* Toast Notification */}
+                    {toast.show && (
+                        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-3 rounded-xl shadow-2xl transition-all animate-bounce">
+                            <i data-lucide={toast.type === 'success' ? 'check-circle' : 'alert-circle'} className={`w-5 h-5 ${toast.type === 'success' ? 'text-emerald-400' : 'text-amber-400'}`}></i>
+                            <span className="text-sm font-semibold">{toast.message}</span>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Initialize lucide icons on state render
+        setTimeout(() => {
+            if (window.lucide) window.lucide.createIcons();
+        }, 100);
+    </script>
+
+    <script type="text/babel">
+        function TranslatorSection({ dictionary, triggerToast }) {
+            const [inputText, setInputText] = useState('');
+            const [copied, setCopied] = useState(false);
+
+            // Pre-process dictionary sorted by word length desc to avoid partial matches
+            const sortedSlangs = useMemo(() => {
+                return [...dictionary].sort((a, b) => b.word.length - a.word.length);
+            }, [dictionary]);
+
+            // Clear Input
+            const handleClear = () => {
+                setInputText('');
+            };
+
+            // Sample sentences to play with
+            const loadSample = (type) => {
+                if (type === 1) {
+                    setInputText("오늘 분좋카가서 갓생러인 친구랑 만났는데, 점메추좀 해달라니까 너 T야? 시전하더라... 억까 당해서 억텐 부렸음 ㅠ");
+                } else if (type === 2) {
+                    setInputText("회사 과제가 너무 많아서 스불재 그 자체인데 중꺾그마 마인드로 일단 오늘 퇴근 푸드는 곱창이랑 엽떡 캘박했음. 내또출 실화냐?");
+                } else {
+                    setInputText("부장님이 일을 알아서 딱 깔끔하고 센스있게 해달라길래 알잘딱깔센 발휘해봤지. 역시 내 기획안 폼미쳤다 하셨음!");
+                }
+            };
+
+            // Real-time Translation Core Algorithm
+            const parsedOutput = useMemo(() => {
+                if (!inputText.trim()) return <span className="text-slate-400 dark:text-slate-500">번역 결과가 이곳에 실시간으로 출력되며, 신조어는 하이라이트 표시됩니다. Hover/터치 시 상세 뜻과 예시를 바로 보여줍니다.</span>;
+
+                // Build a Regex of all slang keys
+                const wordsRegexStr = sortedSlangs.map(s => escapeRegExp(s.word)).join('|');
+                if (!wordsRegexStr) return <span>{inputText}</span>;
+
+                const regex = new RegExp(`(${wordsRegexStr})`, 'g');
+                const parts = inputText.split(regex);
+
+                return parts.map((part, index) => {
+                    const matchedSlang = sortedSlangs.find(s => s.word === part);
+                    if (matchedSlang) {
+                        return (
+                            <span 
+                                key={index} 
+                                className="relative inline-block group border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/40 px-1 rounded cursor-pointer mx-0.5 transition-all hover:bg-indigo-500 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white"
+                                title={`원래 표현: ${matchedSlang.standard}`}
+                            >
+                                {part}
+                                {/* Tooltip component */}
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-slate-900 text-white dark:bg-slate-800 text-xs rounded-xl p-3.5 shadow-xl hidden group-hover:block z-50 pointer-events-none transition-all duration-300 transform scale-95 origin-bottom">
+                                    <span className="flex items-center justify-between border-b border-slate-700 pb-1.5 mb-2">
+                                        <strong className="text-indigo-300 text-sm">「{matchedSlang.word}」</strong>
+                                        <span className="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded-full">{matchedSlang.category}</span>
+                                    </span>
+                                    <p className="font-semibold text-slate-100 mb-1">번역: {matchedSlang.standard}</p>
+                                    <p className="text-slate-300 leading-relaxed mb-2">{matchedSlang.definition}</p>
+                                    <p className="text-[11px] text-indigo-200 italic">Ex: "{matchedSlang.example}"</p>
+                                    <span className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900 dark:border-t-slate-800"></span>
+                                </span>
+                            </span>
+                        );
+                    }
+                    return <span key={index}>{part}</span>;
+                });
+            }, [inputText, sortedSlangs]);
+
+            // Helper to escape special regex chars
+            function escapeRegExp(string) {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+
+            // Copy translated outcome
+            const handleCopyText = () => {
+                if (!inputText) return;
+                // Formulate a plain text translation string
+                let translatedPlain = inputText;
+                sortedSlangs.forEach(s => {
+                    const reg = new RegExp(escapeRegExp(s.word), 'g');
+                    translatedPlain = translatedPlain.replace(reg, `${s.word}(해석: ${s.standard})`);
+                });
+
+                // Standard legacy command fallback due to sandbox restrictions
+                const el = document.createElement('textarea');
+                el.value = translatedPlain;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+
+                setCopied(true);
+                triggerToast('해석 주석이 추가된 전체 텍스트가 클립보드에 복사되었습니다!');
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            // Trigger lucide on load
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, []);
+
+            return (
+                <div className="space-y-8 animate-fadeIn">
+                    {/* Intro */}
+                    <div className="text-center max-w-2xl mx-auto space-y-2">
+                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1.5 rounded-full">스마트 실시간 분석 & 주석 번역기</span>
+                        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">요즘 신조어, 한눈에 간편 해석!</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            문장 통째로 작성해 보세요. 인공지능이 탑재된 듯 내장 신조어 사전을 실시간 대조하여 숨은 진짜 의미를 즉각 표시해 줍니다.
+                        </p>
+                    </div>
+
+                    {/* Interactive Showcase Panel */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Input Area */}
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-md flex flex-col h-96 relative overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                                <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300">
+                                    <i data-lucide="pen-tool" className="w-4 h-4"></i>
+                                    <span className="text-xs font-bold">슬랭 & 신조어가 포함된 글 작성</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <button 
+                                        onClick={handleClear}
+                                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center space-x-1 px-1.5 py-1 rounded">
+                                        <i data-lucide="trash-2" className="w-3.5 h-3.5"></i>
+                                        <span>초기화</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea
+                                value={inputText}
+                                onChange={(e) => setInputText(e.target.value)}
+                                placeholder="예: '오늘 분좋카 가서 디토하고 갓생살기 다짐하며 오운완완료함!'을 작성해 보세요."
+                                className="flex-1 p-5 resize-none bg-transparent outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 leading-relaxed text-sm md:text-base"
+                            />
+                            {/* Fast-load Templates */}
+                            <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center space-x-2 flex-wrap gap-y-1">
+                                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">테스트용 문장:</span>
+                                <button onClick={() => loadSample(1)} className="text-[11px] font-medium bg-slate-200 dark:bg-slate-700 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-950 px-2 py-1 rounded-md transition-colors">⚡ 일상 대화</button>
+                                <button onClick={() => loadSample(2)} className="text-[11px] font-medium bg-slate-200 dark:bg-slate-700 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-950 px-2 py-1 rounded-md transition-colors">💼 직장인의 밤</button>
+                                <button onClick={() => loadSample(3)} className="text-[11px] font-medium bg-slate-200 dark:bg-slate-700 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-950 px-2 py-1 rounded-md transition-colors">🔥 칭찬 일색</button>
+                            </div>
+                        </div>
+
+                        {/* Output Translated Area */}
+                        <div className="bg-gradient-to-br from-indigo-50/20 via-white to-pink-50/10 dark:from-slate-800 dark:to-slate-900 rounded-2xl border border-indigo-200 dark:border-slate-700 shadow-lg flex flex-col h-96 overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-indigo-100 dark:border-slate-700 bg-indigo-50/50 dark:bg-slate-800/50">
+                                <div className="flex items-center space-x-2 text-indigo-700 dark:text-indigo-300">
+                                    <i data-lucide="sparkles" className="w-4 h-4 animate-wave"></i>
+                                    <span className="text-xs font-bold">인공지능 표준어 직역기</span>
+                                </div>
+                                <button 
+                                    onClick={handleCopyText}
+                                    disabled={!inputText}
+                                    className={`text-xs flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${inputText ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'}`}>
+                                    <i data-lucide={copied ? "check" : "copy"} className="w-3.5 h-3.5"></i>
+                                    <span>{copied ? "복사 완료!" : "주석 포함 복사"}</span>
+                                </button>
+                            </div>
+                            <div className="flex-1 p-6 overflow-y-auto leading-relaxed text-sm md:text-base whitespace-pre-line text-slate-700 dark:text-slate-300">
+                                {parsedOutput}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Dictionary Tip Banner */}
+                    <div className="bg-slate-100 dark:bg-slate-800/60 rounded-xl p-4 flex items-start space-x-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                        <i data-lucide="info" className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5"></i>
+                        <div>
+                            <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-0.5">💡 하이라이트된 단어를 터치/클릭해보세요!</h4>
+                            <p>단어 위에 마우스를 갖다 대거나 터치하면, 원어 뜻 외에도 단어의 상세 유래, 트렌디함 지수(1~5점) 및 실제 사용 문맥 예시를 다이내믹 팝업으로 상세 확인하실 수 있습니다.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+    </script>
+
+    <script type="text/babel">
+        function DictionarySection({ dictionary, setDictionary, triggerToast }) {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedCategory, setSelectedCategory] = useState('전체');
+            const [selectedWord, setSelectedWord] = useState(null);
+
+            const categories = ['전체', '줄임말', '신조어', '밈', '기타'];
+
+            // Filter dict by search query and category tab
+            const filteredWords = useMemo(() => {
+                return dictionary.filter(item => {
+                    const matchesSearch = item.word.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                          item.standard.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                          item.definition.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesCategory = selectedCategory === '전체' || item.category === selectedCategory;
+                    return matchesSearch && matchesCategory;
+                });
+            }, [dictionary, searchTerm, selectedCategory]);
+
+            const handleDeleteWord = (id, event) => {
+                event.stopPropagation(); // Prevent card selection
+                if(confirm("정말로 이 단어를 삭제하시겠습니까? (기본 데이터의 경우 새로고침 시 원래 복구됩니다.)")) {
+                    setDictionary(prev => prev.filter(w => w.id !== id));
+                    triggerToast('단어가 안전하게 삭제되었습니다.');
+                    if(selectedWord && selectedWord.id === id) {
+                        setSelectedWord(null);
+                    }
+                }
+            };
+
+            const renderStars = (rating) => {
+                const stars = [];
+                for (let i = 1; i <= 5; i++) {
+                    stars.push(
+                        <i 
+                            key={i} 
+                            data-lucide="star" 
+                            className={`w-3.5 h-3.5 inline-block ${i <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600'}`}
+                        />
+                    );
+                }
+                return stars;
+            };
+
+            // Trigger icons update
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [filteredWords, selectedWord]);
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100">📖 실시간 신조어 백과사전</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">등록된 단어: 총 {dictionary.length}개</p>
+                        </div>
+                        {/* Search Input */}
+                        <div className="relative w-full md:w-80">
+                            <input
+                                type="text"
+                                placeholder="신조어, 번역어, 의미 검색..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700 dark:text-slate-200"
+                            />
+                            <i data-lucide="search" className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    {/* Category Selection Tabs */}
+                    <div className="flex items-center space-x-1 overflow-x-auto pb-2 scrollbar-none">
+                        {categories.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setSelectedCategory(cat)}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${selectedCategory === cat ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700'}`}>
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Grid of Slangs Directory */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Directory List Panel */}
+                        <div className="lg:col-span-2 space-y-3 max-h-[550px] overflow-y-auto pr-1">
+                            {filteredWords.length > 0 ? (
+                                filteredWords.map(word => (
+                                    <div 
+                                        key={word.id}
+                                        onClick={() => setSelectedWord(word)}
+                                        className={`group p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${selectedWord?.id === word.id ? 'bg-indigo-50/70 border-indigo-400 dark:bg-indigo-950/40 dark:border-indigo-600' : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-sm dark:bg-slate-800 dark:border-slate-700/60 dark:hover:border-slate-600'}`}>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center space-x-2">
+                                                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{word.word}</h3>
+                                                <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">{word.category}</span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">해석: {word.standard}</p>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <div className="text-right hidden sm:block">
+                                                <span className="text-[10px] block text-slate-400">유행도</span>
+                                                <div className="flex">{renderStars(word.rating)}</div>
+                                            </div>
+                                            <button 
+                                                onClick={(e) => handleDeleteWord(word.id, e)}
+                                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                                                title="이 신조어 지우기">
+                                                <i data-lucide="trash" className="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                                    <i data-lucide="folder-search" className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2"></i>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">검색 조건에 일치하는 단어가 없습니다.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Slang Detail View Panel */}
+                        <div className="lg:col-span-1">
+                            {selectedWord ? (
+                                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-lg space-y-4 sticky top-20">
+                                    <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-700 pb-3">
+                                        <div>
+                                            <span className="text-[10px] bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 font-bold px-2 py-1 rounded">
+                                                {selectedWord.category}
+                                            </span>
+                                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-2">{selectedWord.word}</h3>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-[10px] block text-slate-400">트렌디 점수</span>
+                                            <div className="flex mt-1">{renderStars(selectedWord.rating)}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3 text-xs leading-relaxed">
+                                        <div>
+                                            <h4 className="font-extrabold text-slate-400 uppercase mb-1">표준어 대치</h4>
+                                            <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{selectedWord.standard}</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-extrabold text-slate-400 uppercase mb-1">상세 뜻풀이</h4>
+                                            <p className="text-slate-700 dark:text-slate-300 font-medium text-xs leading-relaxed">{selectedWord.definition}</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-extrabold text-slate-400 uppercase mb-1">발생 배경 / 유래</h4>
+                                            <p className="text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800/80">{selectedWord.origin || '이 용어의 발생 역사는 네티즌들의 소셜 교류 활동에서 점진적으로 파생되었습니다.'}</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-extrabold text-slate-400 uppercase mb-1">실전 예문 사용법</h4>
+                                            <p className="text-slate-800 dark:text-indigo-200 font-semibold italic">"{selectedWord.example}"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-slate-100/60 dark:bg-slate-800/40 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-8 text-center flex flex-col items-center justify-center h-full min-h-[250px] sticky top-20">
+                                    <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm text-indigo-500 mb-3 animate-pulse">
+                                        <i data-lucide="info" className="w-6 h-6"></i>
+                                    </div>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">좌측 사전 목록에서 단어를 선택하면<br />상세 번역과 어원 예제를 확인하실 수 있습니다.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+    </script>
+
+    <script type="text/babel">
+        function QuizSection({ triggerToast }) {
+            const [gameState, setGameState] = useState('start'); // 'start' | 'playing' | 'result'
+            const [currentIdx, setCurrentIdx] = useState(0);
+            const [score, setScore] = useState(0);
+            const [selectedAnswer, setSelectedAnswer] = useState(null);
+            const [isAnswered, setIsAnswered] = useState(false);
+
+            const startQuiz = () => {
+                setGameState('playing');
+                setCurrentIdx(0);
+                setScore(0);
+                setSelectedAnswer(null);
+                setIsAnswered(false);
+            };
+
+            const handleOptionClick = (optionIdx) => {
+                if (isAnswered) return;
+                setSelectedAnswer(optionIdx);
+                setIsAnswered(true);
+
+                if (optionIdx === QUIZ_QUESTIONS[currentIdx].correct) {
+                    setScore(prev => prev + 1);
+                }
+            };
+
+            const handleNext = () => {
+                if (currentIdx < QUIZ_QUESTIONS.length - 1) {
+                    setCurrentIdx(prev => prev + 1);
+                    setSelectedAnswer(null);
+                    setIsAnswered(false);
+                } else {
+                    setGameState('result');
+                }
+            };
+
+            // Score evaluation logic
+            const getResultType = () => {
+                const total = QUIZ_QUESTIONS.length;
+                const ratio = score / total;
+                if (ratio === 1) return { title: '👑 신조어 마스터 (완벽 인싸)', desc: '트렌드를 완벽하게 지배하는 신조어 고수입니다. MZ세대 최전선에서 소통할 준비가 완벽히 되셨네요!' };
+                if (ratio >= 0.6) return { title: '😎 힙한 일반인 (중간 인싸)', desc: '소외감 느끼지 않고 무리 없이 원만한 카톡 소통이 가능한 센스쟁이입니다.' };
+                return { title: '👴 트렌드 구조 요망 (갓반인)', desc: '줄임말 소통에 약간 피로감을 느끼시나요? 이 웹 사전 번역기를 자주 활용하시면 트렌드 정복이 금방 가능합니다!' };
+            };
+
+            // Trigger icons update
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [gameState, currentIdx, isAnswered]);
+
+            return (
+                <div className="max-w-xl mx-auto bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-fadeIn">
+                    
+                    {gameState === 'start' && (
+                        <div className="p-8 text-center space-y-5">
+                            <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto text-2xl font-black">
+                                <i data-lucide="trophy" className="w-8 h-8"></i>
+                            </div>
+                            <div className="space-y-1">
+                                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">나의 신조어 문해력 테스트</h2>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">MZ세대 대화법, 나는 얼마나 잘 해쳐나갈 수 있을까?</p>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl text-left text-xs leading-relaxed text-slate-500 dark:text-slate-400 space-y-1">
+                                <p className="font-bold text-slate-700 dark:text-slate-200">🔍 테스트 안내:</p>
+                                <p>• 총 문항: 5개 선다형 문제</p>
+                                <p>• 소요시간: 약 1~2분 내외</p>
+                                <p>• 결과 유형: 신조어 마스터부터 트렌드 구제 금융형까지 맞춤 진단</p>
+                            </div>
+                            <button 
+                                onClick={startQuiz}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all">
+                                테스트 시작하기
+                            </button>
+                        </div>
+                    )}
+
+                    {gameState === 'playing' && (
+                        <div className="p-6 md:p-8 space-y-6">
+                            {/* Quiz Header Info */}
+                            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-extrabold uppercase">문제 {currentIdx + 1} / {QUIZ_QUESTIONS.length}</span>
+                                <span className="text-xs text-slate-400 dark:text-slate-500">정답 개수: {score}</span>
+                            </div>
+
+                            {/* Question Card */}
+                            <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100 whitespace-pre-line leading-relaxed">
+                                    {QUIZ_QUESTIONS[currentIdx].question}
+                                </p>
+                            </div>
+
+                            {/* Multi Choices */}
+                            <div className="space-y-2.5">
+                                {QUIZ_QUESTIONS[currentIdx].options.map((opt, idx) => {
+                                    let btnStyle = 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200';
+                                    
+                                    if (isAnswered) {
+                                        if (idx === QUIZ_QUESTIONS[currentIdx].correct) {
+                                            btnStyle = 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-400 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-bold ring-2 ring-emerald-500/20';
+                                        } else if (idx === selectedAnswer) {
+                                            btnStyle = 'bg-red-50 dark:bg-red-950/50 border-red-400 dark:border-red-900 text-red-700 dark:text-red-400 font-bold';
+                                        } else {
+                                            btnStyle = 'opacity-60 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500';
+                                        }
+                                    }
+
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleOptionClick(idx)}
+                                            disabled={isAnswered}
+                                            className={`w-full p-4 rounded-xl border text-left text-xs md:text-sm transition-all flex items-center justify-between ${btnStyle}`}>
+                                            <span>{idx + 1}. {opt}</span>
+                                            {isAnswered && idx === QUIZ_QUESTIONS[currentIdx].correct && (
+                                                <i data-lucide="check" className="w-4 h-4 text-emerald-500"></i>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Explanation Show */}
+                            {isAnswered && (
+                                <div className="bg-indigo-50/50 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-100/60 dark:border-indigo-900/40 text-xs text-indigo-900 dark:text-indigo-200 leading-relaxed">
+                                    <strong className="block text-indigo-700 dark:text-indigo-300 font-bold mb-1">💡 풀이 및 유래:</strong>
+                                    {QUIZ_QUESTIONS[currentIdx].explanation}
+                                </div>
+                            )}
+
+                            {/* Bottom Navigation */}
+                            {isAnswered && (
+                                <button 
+                                    onClick={handleNext}
+                                    className="w-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold py-3.5 rounded-xl transition-all hover:bg-slate-800 flex items-center justify-center space-x-2">
+                                    <span>{currentIdx < QUIZ_QUESTIONS.length - 1 ? '다음 문제 이동' : '최종 점수 확인'}</span>
+                                    <i data-lucide="chevron-right" className="w-4 h-4"></i>
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {gameState === 'result' && (
+                        <div className="p-8 text-center space-y-6">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-white text-3xl font-black mx-auto shadow-xl">
+                                {score} / 5
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-bold text-slate-500 dark:text-slate-400">당신의 신조어 독해 점수 결과</h3>
+                                <h4 className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{getResultType().title}</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed mt-1">
+                                    {getResultType().desc}
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button 
+                                    onClick={startQuiz}
+                                    className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 hover:text-slate-900 text-slate-700 dark:text-white font-bold py-3 rounded-xl transition-all text-xs">
+                                    다시 테스트하기
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        const dummy = document.createElement('textarea');
+                                        dummy.value = `나의 신조어 문해력 테스트 결과: [${getResultType().title}] 획득! 여러분도 측정해보세요!`;
+                                        document.body.appendChild(dummy);
+                                        dummy.select();
+                                        document.execCommand('copy');
+                                        document.body.removeChild(dummy);
+                                        triggerToast('결과 공유 멘트가 복사되었습니다!');
+                                    }}
+                                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-md transition-all text-xs flex items-center justify-center space-x-1.5">
+                                    <i data-lucide="share-2" className="w-3.5 h-3.5"></i>
+                                    <span>결과 복사하기</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+    </script>
+
+    <script type="text/babel">
+        function SubmitSection({ dictionary, setDictionary, triggerToast }) {
+            const [word, setWord] = useState('');
+            const [standard, setStandard] = useState('');
+            const [definition, setDefinition] = useState('');
+            const [example, setExample] = useState('');
+            const [category, setCategory] = useState('줄임말');
+            const [rating, setRating] = useState(3);
+            const [origin, setOrigin] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+
+                // Validation
+                if (!word.trim() || !standard.trim() || !definition.trim()) {
+                    triggerToast('단어 이름, 번역어(대치), 뜻풀이는 반드시 기입하셔야 합니다.', 'error');
+                    return;
+                }
+
+                // Check Duplicates
+                const duplicate = dictionary.some(w => w.word.trim() === word.trim());
+                if (duplicate) {
+                    triggerToast('이미 사전에 같은 이름으로 등록된 단어가 있습니다.', 'error');
+                    return;
+                }
+
+                // Append new word
+                const newSlang = {
+                    id: Date.now(),
+                    word: word.trim(),
+                    standard: standard.trim(),
+                    definition: definition.trim(),
+                    origin: origin.trim() || '사용자 커스텀 입력 단어입니다.',
+                    category,
+                    rating: parseInt(rating),
+                    example: example.trim() || `${word.trim()} 한 번만 더 써보자.`
+                };
+
+                setDictionary(prev => [newSlang, ...prev]);
+                triggerToast('새로운 신조어가 나만의 번역 사전에 영구 추가되었습니다!');
+                
+                // Reset Forms
+                setWord('');
+                setStandard('');
+                setDefinition('');
+                setOrigin('');
+                setExample('');
+                setCategory('줄임말');
+                setRating(3);
+            };
+
+            return (
+                <div className="max-w-xl mx-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl p-6 md:p-8 space-y-6 animate-fadeIn">
+                    <div className="space-y-1 text-center">
+                        <h2 className="text-2xl font-black text-slate-800 dark:text-white">➕ 나만의 신조어 사전에 등록</h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                            나만의 은어나 친구끼리 쓰는 줄임말이 있나요? 직접 등록하면 [번역기] 탭에서 실시간 파싱 및 주석 번역이 즉각 동작합니다.
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">단어 이름 (필수)</label>
+                                <input
+                                    type="text"
+                                    placeholder="예: 최최차차"
+                                    value={word}
+                                    onChange={(e) => setWord(e.target.value)}
+                                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-800 dark:text-slate-100"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">표준어 대치 (필수)</label>
+                                <input
+                                    type="text"
+                                    placeholder="예: 최애는 최애고 차은우는 차은우"
+                                    value={standard}
+                                    onChange={(e) => setStandard(e.target.value)}
+                                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-800 dark:text-slate-100"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">카테고리</label>
+                                <select 
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-800 dark:text-slate-100">
+                                    <option value="줄임말">줄임말</option>
+                                    <option value="신조어">신조어</option>
+                                    <option value="밈">밈</option>
+                                    <option value="기타">기타</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">트렌디성 점수</label>
+                                <select 
+                                    value={rating}
+                                    onChange={(e) => setRating(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-800 dark:text-slate-100">
+                                    <option value={1}>1점 (식음)</option>
+                                    <option value={2}>2점 (가끔 씀)</option>
+                                    <option value={3}>3점 (보편적)</option>
+                                    <option value={4}>4점 (핫함)</option>
+                                    <option value={5}>5점 (초핵인싸)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">상세 뜻 정의 (필수)</label>
+                            <textarea
+                                placeholder="이 신조어가 내포하는 원래의 정확한 의미나 상황 설명을 서술해 주세요."
+                                value={definition}
+                                onChange={(e) => setDefinition(e.target.value)}
+                                rows={2.5}
+                                className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-800 dark:text-slate-100"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">유래 및 비하인드 스토리 (선택)</label>
+                            <input
+                                type="text"
+                                placeholder="유튜브 방송이나 특정 인터넷 커뮤니티 댓글에서 유래..."
+                                value={origin}
+                                onChange={(e) => setOrigin(e.target.value)}
+                                className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-800 dark:text-slate-100"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">사용처 예시문 (선택)</label>
+                            <input
+                                type="text"
+                                placeholder="예: '이번 신형 스마트폰 디자인 완전 폼미쳤네...'"
+                                value={example}
+                                onChange={(e) => setExample(e.target.value)}
+                                className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-slate-800 dark:text-slate-100"
+                            />
+                        </div>
+
+                        <button 
+                            type="submit"
+                            className="w-full bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-extrabold py-3 rounded-xl shadow-lg shadow-indigo-500/10 transition-all mt-2 text-sm">
+                            신조어 사전에 영구 추가
+                        </button>
+                    </form>
+                </div>
+            );
+        }
+    </script>
+
+    <script type="text/babel">
+        function DeploySection({ triggerToast }) {
+            const [copiedItem, setCopiedItem] = useState(null);
+
+            const files = {
+                readme: `# MZ-Standard: 신조어 & 줄임말 번역기
+
+Vercel 또는 GitHub Pages에 완전히 즉시 배포할 수 있는 초경량 반응형 원파일 웹 어플리케이션입니다.
+
+## 🚀 배포 및 활용 방법
+
+### 방법 1. Vercel Drag-and-Drop 배포 (가장 빠름 - 30초)
+1. 본 프로젝트 폴더 혹은 단 하나의 \`index.html\` 파일을 준비합니다.
+2. [Vercel 공식 웹사이트](https://vercel.com)에 로그인합니다.
+3. Vercel Dashboard의 **Add New Project**에서 **Deploy a static site** 또는 드래그 앤 드롭 영역에 \`index.html\`이 들어있는 폴더를 그냥 던집니다.
+4. 배포 버튼을 누르면 단 5초 안에 무료 도메인(\`.vercel.app\`)이 제공되어 누구나 공유하여 접속 가능합니다.
+
+### 방법 2. GitHub Pages 배포 (1분)
+1. 본인의 GitHub 신규 레포지토리를 개설합니다. (예: \`mz-translator\`)
+2. 해당 레포지토리의 루트 경로에 본 소스 코드를 \`index.html\`로 생성 및 push합니다.
+3. 레포지토리 상단의 **Settings** -> **Pages** 탭으로 진입합니다.
+4. Build and deployment의 Source를 **Deploy from a branch**로 고르고, Branch는 **main** 혹은 **master**의 \`/ (root)\`로 저장합니다.
+5. 1분 이내에 \`https://[계정이름].github.io/mz-translator\` 주소로 자동 배포 완료됩니다.`,
+                
+                packageJson: `{
+  "name": "mz-standard-translator",
+  "version": "1.0.0",
+  "description": "Premium Slang Translator & Dictionary designed for GitHub / Vercel deploy",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}`
+            };
+
+            const copyToClipboard = (key, text) => {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                setCopiedItem(key);
+                triggerToast('가이드 파일 내용이 복사되었습니다!');
+                setTimeout(() => setCopiedItem(null), 2000);
+            };
+
+            return (
+                <div className="space-y-8 animate-fadeIn max-w-4xl mx-auto">
+                    {/* Hero Header */}
+                    <div className="text-center space-y-2">
+                        <span className="text-xs font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/40 px-3 py-1.5 rounded-full">Dev & Deploy Operations Guide</span>
+                        <h2 className="text-3xl font-black">GitHub / Vercel 초고속 배포 가이드</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            지금 보시는 이 완벽한 싱글파일 앱을 본인 소유의 라이브 웹 서비스로 배포하고, 지속 관리하는 방법을 자세히 알기 쉽게 정리했습니다.
+                        </p>
+                    </div>
+
+                    {/* Step Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                            <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-extrabold text-base">
+                                1
+                            </div>
+                            <h3 className="font-bold text-base">HTML 파일 저장</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                오른쪽 코드 에디터 화면 전체 소스 코드를 복사해서, 내 컴퓨터의 원하시는 폴더 안에 <code className="text-indigo-600 dark:text-indigo-400 bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded font-mono">index.html</code> 이라는 이름의 단일 파일로 저장합니다.
+                            </p>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                            <div className="w-10 h-10 rounded-lg bg-pink-50 dark:bg-pink-950 flex items-center justify-center text-pink-600 dark:text-pink-400 font-extrabold text-base">
+                                2
+                            </div>
+                            <h3 className="font-bold text-base">Vercel 업로드 (추천)</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                회원가입 후 <strong>Vercel Dashboard</strong>의 드래그 앤 드롭 영역에 <code className="text-pink-600 dark:text-pink-400 bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded font-mono">index.html</code>이 포함된 폴더 전체를 갖다 넣기만 하면 실시간 호스팅 무료 도메인 연결이 완료됩니다.
+                            </p>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                            <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-extrabold text-base">
+                                3
+                            </div>
+                            <h3 className="font-bold text-base">GitHub Pages 연동</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                GitHub 저장소를 만들고 파일을 push한 다음, 저장소의 <strong>Settings - Pages</strong>에서 Branch를 <code>main</code>으로 활성화해 두면 커밋을 할 때마다 자동 배포 및 업데이트가 보장됩니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Meta Code Copy Files */}
+                    <div className="space-y-6">
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                            <div className="flex justify-between items-center px-4 py-3 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                                <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-200">README.md (배포 문서용 파일)</span>
+                                <button 
+                                    onClick={() => copyToClipboard('readme', files.readme)}
+                                    className="text-xs bg-slate-200 dark:bg-slate-700 hover:bg-indigo-600 hover:text-white px-2.5 py-1 rounded transition-colors flex items-center space-x-1 font-semibold">
+                                    <i data-lucide="copy" className="w-3 h-3"></i>
+                                    <span>{copiedItem === 'readme' ? '복사됨!' : '문서 복사'}</span>
+                                </button>
+                            </div>
+                            <pre className="p-4 bg-slate-950 text-slate-300 text-xs font-mono overflow-x-auto leading-relaxed max-h-56">
+                                {files.readme}
+                            </pre>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                            <div className="flex justify-between items-center px-4 py-3 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                                <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-200">package.json (Vercel Node.js 구동을 원할 시 선택 사양)</span>
+                                <button 
+                                    onClick={() => copyToClipboard('packageJson', files.packageJson)}
+                                    className="text-xs bg-slate-200 dark:bg-slate-700 hover:bg-indigo-600 hover:text-white px-2.5 py-1 rounded transition-colors flex items-center space-x-1 font-semibold">
+                                    <i data-lucide="copy" className="w-3 h-3"></i>
+                                    <span>{copiedItem === 'packageJson' ? '복사됨!' : 'JSON 복사'}</span>
+                                </button>
+                            </div>
+                            <pre className="p-4 bg-slate-950 text-slate-300 text-xs font-mono overflow-x-auto leading-relaxed">
+                                {files.packageJson}
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+    </script>
+
+    <script type="text/babel">
+        // Root Mounting
+        const rootElement = document.getElementById('root');
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
+    </script>
+</body>
+</html>
